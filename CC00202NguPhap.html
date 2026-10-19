@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BÀI 2 – NGỮ PHÁP - Flashcard</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; font-family:Arial,"Microsoft YaHei",sans-serif;
+  background:#fdfbf7;
+  display:flex; justify-content:center; color:#202124;
+}
+.app{width:min(860px,96vw); padding:30px 0 40px}
+h1{text-align:center;margin:0 0 15px;font-size:38.4px; font-weight: bold;}
+.progress{text-align:center;font-size:21.6px;color:#444;margin-bottom:20px; font-weight: bold;}
+.card-wrap{perspective:1200px; cursor:pointer}
+.card{
+  width:100%; height:592px; position:relative; transform-style:preserve-3d;
+  transition:transform .55s ease;
+}
+.card.flipped{transform:rotateY(180deg)}
+.face{
+  position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  border-radius:24px; background:white; box-shadow:0 15px 45px rgba(0,0,0,.15);
+  display:flex; flex-direction:column; padding:36px; border:3px solid #eee; overflow-y:auto;
+}
+.front{justify-content:flex-start; align-items:flex-start; text-align:left}
+.back{transform:rotateY(180deg); text-align:left; align-items:flex-start; justify-content:flex-start; padding-top:40px;}
+
+.hl{color: #7c2d12; font-weight: bold; background-color: #fef08a; padding: 2px 6px; border-radius: 4px; border: 1px solid #eab308;}
+.hl-blue { color: #ffffff; font-weight: bold; background-color: #2563eb; padding: 2px 6px; border-radius: 4px; }
+.hl-red { color: #dc2626; font-weight: bold; }
+
+/* Pinyin mặt trước: căn giữa */
+.pinyin{
+  font-size:1.68em;
+  color:#666666;
+  margin-bottom:10px;
+  font-weight:bold;
+  text-align:center;
+  width:100%;
+}
+
+.zh-front { font-size: 2.16em; font-weight: bold; margin-bottom: 6px; line-height: 1.3; color: #dc2626; text-align: center; width: 100%; }
+
+/* Mặt sau */
+.zh-back { color: #2563eb; font-weight: bold; font-size: 1.74em; line-height: 1.2; display: inline-block; margin-top: 8px; margin-bottom: 2px; }
+.pinyin-back { color: #666666; font-weight: bold; font-size: 1.2em; display: block; margin: 2px 0; }
+.vi-back { font-size: 1.2em; color: #333; display: block; margin-bottom: 10px; }
+
+.desc-front { font-size: 1.25em; color: #333; margin: 8px 0; text-align: left; width: 100%; line-height: 1.4; }
+.desc{font-size: 1.38em; color: #333; margin: 0; text-align: left; width: 100%; line-height: 1.4;}
+
+.controls{display:flex;gap:20px;justify-content:center;margin-top:30px}
+button{
+  border:0;border-radius:20px;padding:20px 35px;font-size:26.4px;
+  cursor:pointer;background:#e9eef7;color:#233044; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,.1);
+}
+button.primary{background:#2563eb;color:white}
+</style>
+</head>
+
+<body>
+<div class="app">
+  <h1 id="title">BÀI 2 – NGỮ PHÁP</h1>
+  <div class="progress" id="progress"></div>
+
+  <div class="card-wrap" id="cardWrap" onclick="flipCard()">
+    <div class="card" id="card">
+      <div class="face front" id="frontFace"></div>
+      <div class="face back" id="backFace"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="event.stopPropagation();prevCard()">← TRƯỚC</button>
+    <button class="primary" onclick="event.stopPropagation();flipCard()">LẬT THẺ</button>
+    <button onclick="event.stopPropagation();nextCard()">TIẾP →</button>
+  </div>
+</div>
+
+<script>
+const cards = [
+  {
+    f: "<div class='zh-front'>KHÔNG… CHÚT NÀO</div>" +
+       "<div class='zh-front'>一點也不</div>" +
+       "<div class='pinyin'>yīdiǎn yě bù</div>" +
+       "<div class='desc-front'>" +
+       "<b>Cấu trúc:</b> <code>一點也不 + động từ…</code><br><br>" +
+       "Ý nghĩa: “Hoàn toàn không…”, “chẳng… chút nào”, dùng để phủ định mạnh mẽ.<br><br>" +
+       "• Nếu có tân ngữ (không đưa lên đầu câu làm chủ đề), phải đặt sau 一點, trước động từ.<br>" +
+       "• Có thể dùng 都 thay cho 也 (nhưng 也 được dùng thường xuyên hơn 都).<br><br>" +
+       "• Phân biệt 不 và 沒: 沒 phủ định sự việc đã xảy ra trong quá khứ, còn 不 nói về việc chủ thể từ chối làm gì." +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>夜市的東西一點也不貴。</span><br><span class='pinyin-back'>Yèshì de dōngxi yìdiǎn yě bú guì.</span><span class='vi-back'>(Đồ ở chợ đêm không đắt chút nào.)</span>" +
+       "<span class='zh-back'>已經晚上十二點多了，他們一點也不想睡覺。</span><br><span class='pinyin-back'>Yǐjīng wǎnshang shí'èr diǎn duō le, tāmen yìdiǎn yě bù xiǎng shuìjiào.</span><span class='vi-back'>(Đã hơn 12 giờ đêm rồi, họ không buồn ngủ chút nào.)</span>" +
+       "<span class='zh-back'>他昨天一點飯也沒吃。</span><br><span class='pinyin-back'>Tā zuótiān yìdiǎn fàn yě méi chī.</span><span class='vi-back'>(Hôm qua anh ấy không ăn chút cơm nào. - Không nói: 他昨天一點也沒吃飯)</span>" +
+       "<span class='zh-back'>我一點湯也沒喝。</span><br><span class='pinyin-back'>Wǒ yìdiǎn tāng yě méi hē.</span><span class='vi-back'>(Tôi không uống chút canh nào. - Không nói: 我一點也沒喝湯)</span>" +
+       "<span class='zh-back'>這支手機是不是一點也不好用？所以沒人買。</span><br><span class='pinyin-back'>Zhè zhī shǒujī shì bú shì yìdiǎn yě bù hǎoyòng? Suǒyǐ méi rén mǎi.</span><span class='vi-back'>(Cái điện thoại này có phải hoàn toàn không dễ dùng không? Nên không ai mua.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>TỐT NHẤT LÀ…</div>" +
+       "<div class='zh-front'>還是…吧</div>" +
+       "<div class='pinyin'>háishi ... ba</div>" +
+       "<div class='desc-front'>" +
+       "Dùng để đưa ra lời đề nghị, gợi ý rằng phương án được nói đến là lựa chọn tốt nhất trong hoàn cảnh hiện tại. Câu luôn kết thúc bằng trợ từ <b><span style='color: #dc2626; font-weight: bold;'>吧</span></b>." +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>我最近很忙，我們還是週末再出去吃飯吧！</span><br><span class='pinyin-back'>Wǒ zuìjìn hěn máng, wǒmen háishi zhōumò zài chūqù chīfàn ba!</span><span class='vi-back'>(Dạo này tôi bận lắm, cuối tuần chúng ta hẵng ra ngoài ăn nhé!)</span>" +
+       "<span class='zh-back'>已經晚上十一點了，我還是明天早上再給老師打電話吧！</span><br><span class='pinyin-back'>Yǐjīng wǎnshang shíyī diǎn le, wǒ háishi míngtiān zǎoshang zài gěi lǎoshī dǎ diànhuà ba!</span><span class='vi-back'>(Đã 11 giờ đêm rồi, tôi để sáng mai gọi cho giáo viên vậy!)</span>" +
+       "<span class='zh-back'>雨下得很大，今天你還是別回家吧！</span><br><span class='pinyin-back'>Yǔ xià de hěn dà, jīntiān nǐ háishi bié huíjiā ba!</span><span class='vi-back'>(Mưa to lắm, hôm nay bạn đừng về nhà nhé!)</span>" +
+       "<span class='zh-back'>他聽了一定不開心，你還是別告訴他吧！</span><br><span class='pinyin-back'>Tā tīng le yídìng bù kāixīn, nǐ háishi bié gàosù tā ba!</span><span class='vi-back'>(Anh ấy nghe xong chắc chắn không vui, bạn đừng nói với anh ấy nhé!)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>ĐI CHẬM MỘT CHÚT</div>" +
+       "<div class='zh-front'>走慢一點</div>" +
+       "<div class='pinyin'>zǒu màn yìdiǎn</div>" +
+       "<div class='desc-front'>" +
+       "Tính từ có thể kết hợp với <b><span style='color: #dc2626; font-weight: bold;'>一點</span></b> để tạo thành trạng ngữ bổ nghĩa cho hành động. <b><span style='color: #dc2626; font-weight: bold;'>一點</span></b> là bắt buộc phải có. Thường dùng trong câu yêu cầu, mệnh lệnh." +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>你走慢一點！</span><br><span class='pinyin-back'>Nǐ zǒu màn yìdiǎn!</span><span class='vi-back'>(Bạn đi chậm một chút!)</span>" +
+       "<span class='zh-back'>你們吃快一點！</span><br><span class='pinyin-back'>Nǐmen chī kuài yìdiǎn!</span><span class='vi-back'>(Các bạn ăn nhanh một chút!)</span>" +
+       "<span class='zh-back'>你的字要寫好看一點！</span><br><span class='pinyin-back'>Nǐ de zì yào xiě hǎokàn yìdiǎn!</span><span class='vi-back'>(Chữ của bạn phải viết đẹp hơn một chút!)</span>" +
+       "<span class='zh-back'>你不寫好看一點，老師說要再寫一次。</span><br><span class='pinyin-back'>Nǐ bù xiě hǎokàn yìdiǎn, lǎoshī shuō yào zài xiě yí cì.</span><span class='vi-back'>(Nếu bạn không viết đẹp hơn, giáo viên nói phải viết lại.)</span>" +
+       "<span class='zh-back'>你不走快一點，就不能跟朋友見面了。</span><br><span class='pinyin-back'>Nǐ bù zǒu kuài yìdiǎn, jiù bù néng gēn péngyǒu jiànmiàn le.</span><span class='vi-back'>(Nếu bạn không đi nhanh hơn, thì không gặp được bạn bè đâu.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>LẶP LẠI TÍNH TỪ HAI ÂM TIẾT</div>" +
+       "<div class='zh-front'>AB → AABB</div>" +
+       "<div class='pinyin'></div>" +
+       "<div class='desc-front'>" +
+       "Diễn tả trạng thái mạnh hơn. <br>Ví dụ: 開心 → 開開心心, 輕鬆 → 輕輕鬆鬆, 舒服 → 舒舒服服.<br><br>" +
+       "• Đứng trước động từ: theo sau có 地.<br>" +
+       "• Đứng trước danh từ: theo sau có 的.<br>" +
+       "• Làm vị ngữ: cả câu kết thúc bằng 的.<br><br>" +
+       "<b>Lưu ý:</b> Không dùng từ chỉ mức độ (很, 非常...) trước tính từ lặp lại." +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>他們開開心心地一起吃飯。</span><br><span class='pinyin-back'>Tāmen kāi-kāi-xīnxīn de yìqǐ chīfàn.</span><span class='vi-back'>(Họ vui vẻ cùng nhau ăn cơm.)</span>" +
+       "<span class='zh-back'>王老闆客客氣氣地跟人說話。</span><br><span class='pinyin-back'>Wáng lǎobǎn kè-kè-qìqì de gēn rén shuōhuà.</span><span class='vi-back'>(Ông chủ Vương nói chuyện với người ta rất khách sáo.)</span>" +
+       "<span class='zh-back'>月美每天都穿得漂漂亮亮（的）。</span><br><span class='pinyin-back'>Yuèměi měitiān dōu chuān de piào-piào-liàng-liàng (de).</span><span class='vi-back'>(Nguyệt Mỹ ngày nào cũng ăn mặc xinh đẹp.)</span>" +
+       "<span class='zh-back'>我要租一個乾乾淨淨的房間，比較舒服。</span><br><span class='pinyin-back'>Wǒ yào zū yí gè gān-gān-jìng-jìng de fángjiān, bǐjiào shūfu.</span><span class='vi-back'>(Tôi muốn thuê một căn phòng sạch sẽ, thoải mái hơn.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>KHÔNG… LẮM</div>" +
+       "<div class='zh-front'>不太</div>" +
+       "<div class='pinyin'>bù tài</div>" +
+       "<div class='desc-front'>" +
+       "<b>Cấu trúc:</b> <code>不太 + tính từ</code><br><br>" +
+       "Ý nghĩa: Diễn tả ý phủ định nhẹ nhàng, lịch sự.<br><br>" +
+       "• Còn cách nói 不很 + tính từ, cũng là “không… lắm”, nhưng không phổ biến bằng 不太.<br>" +
+       "• Gần nghĩa với 不是很, mang tính thực tế và thẳng thắn hơn, không có sắc thái lịch sự." +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>這杯茶不太熱。</span><br><span class='pinyin-back'>Zhè bēi chá bú tài rè.</span><span class='vi-back'>(Ly trà này không nóng lắm.)</span>" +
+       "<span class='zh-back'>今天不太冷，你不付穿那麼多。</span><br><span class='pinyin-back'>Jīntiān bú tài lěng, nǐ bú bì chuān nàme duō.</span><span class='vi-back'>(Hôm nay không lạnh lắm, bạn không cần mặc nhiều thế.)</span>" +
+       "<span class='zh-back'>A: 你怎麼臉色這麼難看？</span><br><span class='pinyin-back'>A: Nǐ zěnme liǎnsè zhème nánkàn?</span><span class='vi-back'>(Sao mặt bạn khó coi thế?)</span>" +
+       "<span class='zh-back'>B: 我覺得不太舒服。</span><br><span class='pinyin-back'>B: Wǒ juéde bú tài shūfu.</span><span class='vi-back'>(Tôi thấy không được khỏe lắm.)</span>" +
+       "<span class='zh-back'>這家超市的東西不太便宜，我們去學校附近的商店買吧！</span><br><span class='pinyin-back'>Zhè jiā chāoshì de dōngxi bú tài piányi, wǒmen qù xuéxiào fùjìn de shāngdiàn mǎi ba!</span><span class='vi-back'>(Đồ ở siêu thị này không rẻ lắm, chúng ta đến cửa hàng gần trường mua đi!)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>部 | 邊</div>" +  
+       "<div class='pinyin'>bù | biān</div>" +
+       "<div class='desc-front'>" +
+       "• <b>部</b> chỉ các “khu vực” của một vùng (đối với quốc gia là các khu vực trong nước).<br>" +
+       "• <b>邊</b> chỉ “phía” của một điểm tham chiếu (bên ngoài biên giới hoặc một điểm mốc).<br><br>" +
+       "• Các từ phương hướng (東, 西, 南, 北...) có thể kết hợp với cả 邊 hoặc 部.<br><br>" +
+       "• <b>Lưu ý:</b> Có 中部 nghĩa là “ở khu vực trung tâm”, nhưng không có 中邊." +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>台灣的北部、南部有很多好玩的地方。</span><br><span class='pinyin-back'>Táiwān de běibù, nánbù yǒu hěn duō hǎowán de dìfang.</span><span class='vi-back'>(Miền bắc, miền nam Đài Loan có nhiều nơi chơi vui.)</span>" +
+       "<span class='zh-back'>台灣東部的風景很美。</span><br><span class='pinyin-back'>Táiwān dōngbù de fēngjǐng hěn měi.</span><span class='vi-back'>(Phong cảnh miền đông Đài Loan rất đẹp.)</span>" +
+       "<span class='zh-back'>台灣東邊的大海非常乾淨。</span><br><span class='pinyin-back'>Táiwān dōngbiān de dàhǎi fēicháng gānjìng.</span><span class='vi-back'>(Biển ở phía đông Đài Loan rất sạch.)</span>" +
+       "<span class='zh-back'>那個地方西邊有山，南邊有海。</span><br><span class='pinyin-back'>Nà gè dìfang xībiān yǒu shān, nánbiān yǒu hǎi.</span><span class='vi-back'>(Phía tây chỗ đó có núi, phía nam có biển.)</span>" +
+       "</div>"
+  }
+];
+
+let idx = 0;
+
+function render() {
+  document.getElementById('frontFace').innerHTML = cards[idx].f;
+  document.getElementById('backFace').innerHTML = cards[idx].b;
+  document.getElementById('progress').innerText = `Thẻ ${idx + 1} / ${cards.length}`;
+}
+
+function flipCard() {
+  document.getElementById('card').classList.toggle('flipped');
+}
+
+function nextCard() {
+  idx = (idx + 1) % cards.length;
+  document.getElementById('card').classList.remove('flipped');
+  render();
+}
+
+function prevCard() {
+  idx = (idx - 1 + cards.length) % cards.length;
+  document.getElementById('card').classList.remove('flipped');
+  render();
+}
+
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+    nextCard();
+    event.preventDefault();
+  } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+    prevCard();
+    event.preventDefault();
+  } else if (event.key === ' ' || event.key === 'Enter') {
+    flipCard();
+    event.preventDefault();
+  }
+});
+
+render();
+</script>
+</body>
+</html>

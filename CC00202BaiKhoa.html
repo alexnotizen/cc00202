@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BÀI 2 - BÀI KHÓA</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; font-family:Arial,"Microsoft YaHei",sans-serif;
+  background:linear-gradient(135deg,#eef4ff,#f9fbff);
+  display:flex; justify-content:center; color:#202124;
+}
+.app{width:min(900px,96vw); padding:20px 0 30px}
+h1{text-align:center;margin:0 0 6px;font-size:32px}
+.subtitle{text-align:center;color:#666;margin-bottom:14px;font-size:18px}
+.progress{text-align:center;font-size:18px;color:#666;margin-bottom:12px}
+.card-wrap{perspective:1200px; cursor:pointer}
+.card{
+  width:100%; height:750px; position:relative; transform-style:preserve-3d;
+  transition:transform .55s ease;
+}
+.card.flipped{transform:rotateY(180deg)}
+.face{
+  position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  border-radius:24px; background:white; box-shadow:0 12px 35px rgba(30,60,100,.15);
+  display:flex; flex-direction:column; justify-content:space-between;
+  padding:32px 36px; border:1px solid #e6eaf0; overflow:hidden;
+}
+.back{transform:rotateY(180deg)}
+
+.card-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.context-title {
+  font-weight: bold;
+  margin-bottom: 20px;
+  font-size: 22px;
+  color: #2c3e50;
+  line-height: 1.5;
+  border-bottom: 2px solid #edf2f7;
+  padding-bottom: 12px;
+}
+.dialogue-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.dialogue-table td {
+  vertical-align: top;
+  padding: 10px 0;
+}
+.speaker-col {
+  width: 140px;
+  color: #000000;
+  font-weight: bold;
+  font-size: 24px;
+  white-space: nowrap;
+}
+.speaker-col-front {
+  width: 140px;
+  color: #718096;
+  font-weight: bold;
+  font-size: 40.5px;
+  white-space: nowrap;
+}
+.speech-col {
+  color: #e53e3e;
+  font-weight: bold;
+  font-size: 40.5px;
+  line-height: 1.5;
+}
+.speech-col-back {
+  color: #e53e3e;
+  font-weight: bold;
+  font-size: 27px;
+  line-height: 1.5;
+}
+.pinyin-block {
+  color: #718096;
+  font-weight: bold;
+  font-size: 22px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  display: block;
+}
+.meaning-text {
+  font-size: 21px;
+  color: #4b5563;
+  font-weight: normal;
+  margin-top: 4px;
+}
+
+.audio-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 22px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  vertical-align: middle;
+}
+.audio-btn:hover {
+  background-color: #edf2f7;
+}
+
+.hint{color:#888; font-size:18px; text-align:center; margin-top:14px}
+.controls{display:flex;gap:16px;justify-content:center;margin-top:22px}
+button{
+  border:0;border-radius:14px;padding:16px 26px;font-size:20px;
+  cursor:pointer;background:#e9eef7;color:#233044;
+}
+button.primary{background:#2563eb;color:white}
+button:hover{filter:brightness(.97)}
+.extra{display:flex;justify-content:center;gap:10px;margin-top:14px}
+.shuffle{background:#e9f8ef}
+
+@media(max-width:600px){
+ .app{padding-top:16px}.card{height:780px}
+ .face{padding:22px 20px}
+ .context-title{font-size:18px; margin-bottom:14px}
+ .speaker-col{width:100px; font-size:18px}
+ .speaker-col-front{width:100px; font-size:30px}
+ .speech-col{font-size:30px}
+ .speech-col-back{font-size:20px}
+ .pinyin-block{font-size:17px;}
+ .meaning-text{font-size:16px}
+ .controls button{padding:12px 16px; font-size:16px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🇨🇳 BÀI 2 - BÀI KHÓA</h1>
+
+  <div class="progress" id="progress"></div>
+
+  <div class="card-wrap" id="cardWrap" onclick="flipCard()">
+    <div class="card" id="card">
+      <div class="face front">
+        <div class="card-content" id="frontContent"></div>
+      </div>
+      <div class="face back">
+        <div class="card-content" id="backContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="event.stopPropagation();prevCard()">← Trước</button>
+    <button class="primary" onclick="event.stopPropagation();flipCard()">Lật thẻ</button>
+    <button onclick="event.stopPropagation();nextCard()">Tiếp →</button>
+  </div>
+  <div class="extra">
+    <button class="shuffle" onclick="event.stopPropagation();shuffleCards()">🔀 Trộn thẻ</button>
+  </div>
+</div>
+
+<script>
+const originalCards = [
+  {
+    "frontContext": "BÀI KHÓA 1: Tại trạm xe buýt",
+    "frontLines": [
+      { "speaker": "如玉:", "speech": "安同，早！你要去哪裡？" },
+      { "speaker": "安同:", "speech": "早！我約了朋友一起去看電影，你呢？" },
+      { "speaker": "如玉:", "speech": "我要去看電腦展。" },
+      { "speaker": "安同:", "speech": "你去哪裡看電腦展？" },
+      { "speaker": "如玉:", "speech": "世貿展覽館，我現在要去對面坐公車。" },
+      { "speaker": "安同:", "speech": "那裡離台北 101 不遠，妳怎麼不坐捷運呢？" },
+      { "speaker": "如玉:", "speech": "朋友告訴我公車直接到展覽館，不必換車。" },
+      { "speaker": "安同:", "speech": "坐捷運也很方便。妳先坐 2 號線到台北車站，再換車到展覽館。" },
+      { "speaker": "如玉:", "speech": "聽起來坐捷運比較麻煩。" },
+      { "speaker": "安同:", "speech": "一點也不麻煩，捷運比較快，坐公車要花一個多小時。你還是坐捷運吧！" },
+      { "speaker": "如玉:", "speech": "捷運站遠嗎？" },
+      { "speaker": "安同:", "speech": "捷運站就在前面。" },
+      { "speaker": "如玉:", "speech": "謝謝！我得趕快走了。" },
+      { "speaker": "安同:", "speech": "別急，走慢一點。捷運的班次很多。" },
+      { "speaker": "如玉:", "speech": "好，我們下禮拜見。" }
+    ],
+    "backLines": [
+      { "speaker": "如玉:", "speech": "安同，早！你要去哪裡？", "pinyin": "Āntóng, zǎo! Nǐ yào qù nǎlǐ?", "meaning": "An Đồng, chào buổi sáng! Bạn muốn đi đâu vậy?" },
+      { "speaker": "安同:", "speech": "早！我約了朋友一起去看電影，你呢？", "pinyin": "Zǎo! Wǒ yuēle péngyǒu yìqǐ qù kàn diànyǐng, nǐ ne?", "meaning": "Chào buổi sáng! Tôi đã hẹn bạn bè cùng đi xem phim, còn bạn thì sao?" },
+      { "speaker": "如玉:", "speech": "我要去看電腦展。", "pinyin": "Wǒ yào qù kàn diànnǎo zhǎn.", "meaning": "Tôi muốn đi xem triển lãm máy tính." },
+      { "speaker": "安同:", "speech": "你去哪裡看電腦展？", "pinyin": "Nǐ qù nǎlǐ kàn diànnǎo zhǎn?", "meaning": "Bạn đi đâu xem triển lãm máy tính?" },
+      { "speaker": "如玉:", "speech": "世貿展覽館，我現在要去對面坐公車。", "pinyin": "Shìmào Zhǎnlǎn Guǎn, wǒ xiànzài yào qù duìmiàn zuò gōngchē.", "meaning": "Triển lãm Trung tâm Thương mại Thế giới, bây giờ tôi phải qua đối diện để đi xe buýt." },
+      { "speaker": "安同:", "speech": "那裡離台北 101 不遠，妳怎麼不坐捷運呢？", "pinyin": "Nàlǐ lí Táiběi 101 bù yuǎn, nǐ zěnme bù zuò jiéyùn ne?", "meaning": "Chỗ đó cách Taipei 101 không xa, sao bạn không đi tàu điện ngầm?" },
+      { "speaker": "如玉:", "speech": "朋友告訴我公車直接到展覽館，不必換車。", "pinyin": "Péngyǒu gàosù wǒ gōngchē zhíjiē dào zhǎnlǎn guǎn, bùbì huàn chē.", "meaning": "Bạn bè nói với tôi xe buýt đi thẳng đến triển lãm, không cần đổi xe." },
+      { "speaker": "安同:", "speech": "坐捷運也很方便。妳先坐 2 號線到台北車站，再換車到展覽館。", "pinyin": "Zuò jiéyùn yě hěn fāngbiàn. Nǐ xiān zuò èr hào xiàn dào Táiběi Chēzhàn, zài huàn chē dào zhǎnlǎn guǎn.", "meaning": "Đi tàu điện ngầm cũng rất tiện. Bạn đi tuyến số 2 đến Ga Đài Bắc, rồi đổi xe đến triển lãm." },
+      { "speaker": "如玉:", "speech": "聽起來坐捷運比較麻煩。", "pinyin": "Tīng qǐlái zuò jiéyùn bǐjiào máfán.", "meaning": "Nghe có vẻ đi tàu điện ngầm rắc rối hơn." },
+      { "speaker": "安同:", "speech": "一點也不麻煩，捷運比較快，坐公車要花一個多小時。你還是坐捷運吧！", "pinyin": "Yìdiǎn yě bù máfán, jiéyùn bǐjiào kuài, zuò gōngchē yào huā yí gè duō xiǎoshí. Nǐ háishì zuò jiéyùn ba!", "meaning": "Không rắc rối chút nào, tàu điện ngầm nhanh hơn, đi xe buýt phải mất hơn một tiếng. Bạn vẫn nên đi tàu điện ngầm đi!" },
+      { "speaker": "如玉:", "speech": "捷運站遠嗎？", "pinyin": "Jiéyùn zhàn yuǎn ma?", "meaning": "Ga tàu điện ngầm có xa không?" },
+      { "speaker": "安同:", "speech": "捷運站就在前面。", "pinyin": "Jiéyùn zhàn jiù zài qiánmiàn.", "meaning": "Ga tàu điện ngầm ở ngay phía trước." },
+      { "speaker": "如玉:", "speech": "謝謝！我得趕快走了。", "pinyin": "Xièxiè! Wǒ děi gǎnkuài zǒu le.", "meaning": "Cảm ơn! Tôi phải đi nhanh đây." },
+      { "speaker": "安同:", "speech": "別急，走慢一點。捷運的班次很多。", "pinyin": "Bié jí, zǒu màn yìdiǎn. Jiéyùn de bāncì hěn duō.", "meaning": "Đừng gấp, đi chậm thôi. Tàu điện ngầm có nhiều chuyến lắm." },
+      { "speaker": "如玉:", "speech": "好，我們下禮拜見。", "pinyin": "Hǎo, wǒmen xià lǐbài jiàn.", "meaning": "Được, tuần sau gặp lại." }
+    ]
+  },
+  {
+    "frontContext": "BÀI KHÓA 2: Nói về việc sử dụng các phương tiện giao thông",
+    "frontLines": [
+      { "speaker": "旁白:", "speech": "如玉的朋友美美從法國到台灣來玩兩個禮拜，她先從歐洲坐飛機到越南，再轉機到台灣。" },
+      { "speaker": "旁白:", "speech": "到了機場，美美直接坐巴士到台北。" },
+      { "speaker": "旁白:", "speech": "如玉告訴她，在市區坐捷運是最方便的，所以她下了巴士，就坐捷運到旅館去了。" },
+      { "speaker": "旁白:", "speech": "美美覺得台北的交通非常便利，到處都有公車、計程車，還有捷運，去哪裡都很方便。" },
+      { "speaker": "旁白:", "speech": "台北捷運的路線不複雜，車票也不貴，買一張悠遊卡，誰都可以輕輕鬆鬆地去逛逛。" },
+      { "speaker": "旁白:", "speech": "美美住在法國東部，沒有什麼機會到海邊。" },
+      { "speaker": "旁白:", "speech": "聽說台灣附近的小島，風景都很美，所以她決定到綠島去看看。" },
+      { "speaker": "旁白:", "speech": "綠島在台灣的東南邊，到那裡不太方便。" },
+      { "speaker": "旁白:", "speech": "美美得先坐火車到台東，再搭船或是飛機到綠島。" },
+      { "speaker": "旁白:", "speech": "她打算第二個星期去綠島，好好地玩一玩。" }
+    ],
+    "backLines": [
+      { "speaker": "旁白:", "speech": "如玉的朋友美美從法國到台灣來玩兩個禮拜，她先從歐洲坐飛機到越南，再轉機到台灣。", "pinyin": "Rúyù de péngyǒu Měiměi cóng Fǎguó dào Táiwān lái wán liǎng gè lǐbài, tā xiān cóng Ōuzhōu zuò fēijī dào Yuènán, zài zhuǎn jī dào Táiwān.", "meaning": "Bạn của Như Ngọc là Mỹ Mỹ từ Pháp đến Đài Loan chơi hai tuần, cô ấy bay từ châu Âu đến Việt Nam trước, rồi quá cảnh đến Đài Loan." },
+      { "speaker": "旁白:", "speech": "到了機場，美美直接坐巴士到台北。", "pinyin": "Dào le jīchǎng, Měiměi zhíjiē zuò bāshì dào Táiběi.", "meaning": "Đến sân bay, Mỹ Mỹ đi xe buýt trực tiếp đến Đài Bắc." },
+      { "speaker": "旁白:", "speech": "如玉告訴她，在市區坐捷運是最方便的，所以她下了巴士，就坐捷運到旅館去了。", "pinyin": "Rúyù gàosù tā, zài shìqū zuò jiéyùn shì zuì fāngbiàn de, suǒyǐ tā xià le bāshì, jiù zuò jiéyùn dào lǚguǎn qù le.", "meaning": "Như Ngọc nói với cô ấy rằng đi tàu điện ngầm trong thành phố là tiện nhất, nên sau khi xuống xe buýt, cô ấy đi tàu điện ngầm đến khách sạn." },
+      { "speaker": "旁白:", "speech": "美美覺得台北的交通非常便利，到處都有公車、計程車，還有捷運，去哪裡都很方便。", "pinyin": "Měiměi juéde Táiběi de jiāotōng fēicháng biànlì, dàochù dōu yǒu gōngchē, jìchéngchē, hái yǒu jiéyùn, qù nǎlǐ dōu hěn fāngbiàn.", "meaning": "Mỹ Mỹ cảm thấy giao thông ở Đài Bắc rất thuận tiện, ở đâu cũng có xe buýt, taxi, và tàu điện ngầm, đi đâu cũng rất tiện." },
+      { "speaker": "旁白:", "speech": "台北捷運的路線不複雜，車票也不貴，買一張悠遊卡，誰都可以輕輕鬆鬆地去逛逛。", "pinyin": "Táiběi jiéyùn de lùxiàn bù fùzá, chēpiào yě bù guì, mǎi yì zhāng yōuyóukǎ, shéi dōu kěyǐ qīngqīngsōngsōng de qù guàngguang.", "meaning": "Tuyến đường tàu điện ngầm Đài Bắc không phức tạp, vé tàu cũng không đắt, mua một thẻ EasyCard, ai cũng có thể thoải mái đi dạo." },
+      { "speaker": "旁白:", "speech": "美美住在法國東部，沒有什麼機會到海邊。", "pinyin": "Měiměi zhù zài Fǎguó dōngbù, méiyǒu shénme jīhuì dào hǎibiān.", "meaning": "Mỹ Mỹ sống ở miền đông nước Pháp, không có nhiều cơ hội đến bãi biển." },
+      { "speaker": "旁白:", "speech": "聽說台灣附近的小島，風景都很美，所以她決定到綠島去看看。", "pinyin": "Tīngshuō Táiwān fùjìn de xiǎodǎo, fēngjǐng dōu hěn měi, suǒyǐ tā juédìng dào Lǜdǎo qù kànkan.", "meaning": "Nghe nói những hòn đảo nhỏ gần Đài Loan phong cảnh rất đẹp, nên cô ấy quyết định đến Đảo Xanh xem thử." },
+      { "speaker": "旁白:", "speech": "綠島在台灣的東南邊，到那裡不太方便。", "pinyin": "Lǜdǎo zài Táiwān de dōngnán biān, dào nàlǐ bù tài fāngbiàn.", "meaning": "Đảo Xanh nằm ở phía đông nam Đài Loan, đến đó không tiện lắm." },
+      { "speaker": "旁白:", "speech": "美美得先坐火車到台東，再搭船或是飛機到綠島。", "pinyin": "Měiměi děi xiān zuò huǒchē dào Táidōng, zài dā chuán huòshì fēijī dào Lǜdǎo.", "meaning": "Mỹ Mỹ phải đi tàu hỏa đến Đài Đông trước, rồi đi thuyền hoặc máy bay đến Đảo Xanh." },
+      { "speaker": "旁白:", "speech": "她打算第二個星期去綠島，好好地玩一玩。", "pinyin": "Tā dǎsuàn dì èr gè xīngqī qù Lǜdǎo, hǎohǎo de wán yì wán.", "meaning": "Cô ấy dự định sẽ đến Đảo Xanh vào tuần thứ hai, để chơi cho thật vui." }
+    ]
+  }
+];
+
+let cards = [...originalCards];
+let index = 0;
+let flipped = false;
+
+function speakText(event, text) {
+  event.stopPropagation();
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-TW';
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+  } else {
+    alert('Trình duyệt của bạn không hỗ trợ tính năng phát âm.');
+  }
+}
+
+function render(){
+  const c = cards[index];
+  
+  let frontHtml = `<div class="context-title">${c.frontContext}</div><table class="dialogue-table">`;
+  c.frontLines.forEach(line => {
+    frontHtml += `
+      <tr>
+        <td class="speaker-col-front">${line.speaker}</td>
+        <td class="speech-col">
+          ${line.speech}
+          <button class="audio-btn" onclick="speakText(event, '${line.speech.replace(/'/g, "\\'")}')" title="Nghe phát âm">🔊</button>
+        </td>
+      </tr>`;
+  });
+  frontHtml += `</table>`;
+  document.getElementById('frontContent').innerHTML = frontHtml;
+
+  let backHtml = `<div class="context-title">${c.frontContext}</div><table class="dialogue-table">`;
+  c.backLines.forEach(line => {
+    backHtml += `
+      <tr>
+        <td class="speaker-col">${line.speaker}</td>
+        <td class="speech-col-back">
+          ${line.speech}
+          <button class="audio-btn" onclick="speakText(event, '${line.speech.replace(/'/g, "\\'")}')" title="Nghe phát âm">🔊</button>
+          <div class="pinyin-block">${line.pinyin}</div>
+          <div class="meaning-text">${line.meaning}</div>
+        </td>
+      </tr>`;
+  });
+  backHtml += `</table>`;
+  document.getElementById('backContent').innerHTML = backHtml;
+
+  document.getElementById('progress').textContent = `Thẻ ${index+1} / ${cards.length}`;
+  document.getElementById('card').classList.toggle('flipped', flipped);
+}
+
+function flipCard(){
+  flipped = !flipped;
+  document.getElementById('card').classList.toggle('flipped', flipped);
+}
+
+function nextCard(){
+  index = (index + 1) % cards.length;
+  flipped = false; render();
+}
+
+function prevCard(){
+  index = (index - 1 + cards.length) % cards.length;
+  flipped = false; render();
+}
+
+function shuffleCards(){
+  for(let i=cards.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [cards[i],cards[j]]=[cards[j],cards[i]];
+  }
+  index=0; flipped=false; render();
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight') nextCard();
+  else if(e.key==='ArrowLeft') prevCard();
+  else if(e.key===' ' || e.key==='Enter'){
+    e.preventDefault();
+    flipCard();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
